@@ -16,4 +16,27 @@ angular.module('starter', ['ionic'])
       StatusBar.styleDefault();
     }
   });
-});
+})
+  .config(function ($stateProvider, $urlRouterProvider) {
+    $stateProvider
+
+      // FAQ
+      .state('app.moments', {
+        url: "/moment",
+        views: {
+          'menuContent': {
+            templateUrl: "templates/startView.html",
+            controller: 'startViewController'
+          }
+        }
+      });
+
+
+    // if none of the above states are matched, use this as the fallback
+    $urlRouterProvider.otherwise('/app/moment');
+  })
+  .module('starter.controllers', [])
+
+  .controller('startViewController  ', function ($scope, $ionicModal, $timeout) {
+
+  });
