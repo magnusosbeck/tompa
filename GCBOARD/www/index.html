@@ -96,36 +96,40 @@
         var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
         scene.add(light);
 
-//        var texture = THREE.ImageUtils.loadTexture(
-//          'img/checker.png'
-//        );
 
-//        var sphere = new THREE.Mesh(
-//          new THREE.SphereGeometry(100, 32, 32),
-//          new THREE.MeshBasicMaterial({
-//              map: THREE.ImageUtils.loadTexture('img/checker.png')
-//          })
-//        );
+        var r = "img/";
+        var urls = [
+            r + "checker.png",
+            r + "checker.png",
+            r + "checker.png",
+            r + "wood.jpg",
+            r + "checker.png",
+            r + "checker.png"
+        ];
+        /*
+         r + "banan.jpg",
+         r + "checker.png",
+         r + "gGxwr.jpg",
+         r + "hall.jpg",
+         r + "lekolar.jpg",
+         r + "wood.jpg"
+         */
 
-        var material = new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture('img/banan.jpg')
+        var textureCube = THREE.ImageUtils.loadTextureCube(urls);
+
+        var cubeShader = THREE.ShaderLib["cube"];
+        var cubeMaterial = new THREE.ShaderMaterial({
+            fragmentShader: cubeShader.fragmentShader,
+            vertexShader: cubeShader.vertexShader,
+            uniforms: cubeShader.uniforms,
+            depthWrite: false,
+            side: THREE.BackSide
         });
 
-        var material2 = new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture('img/lekolar.jpg')
-        });
+        cubeMaterial.uniforms["tCube"].value = textureCube;
 
-//        material.wrapS = THREE.RepeatWrapping;
-//        material.wrapT = THREE.RepeatWrapping;
-//        material.repeat = new THREE.Vector2(50, 50);
-//        material.anisotropy = renderer.getMaxAnisotropy();
-
-
-        material.side = THREE.BackSide;
-        material2.side = THREE.BackSide;
-        var geometry2 = new THREE.SphereGeometry(500, 32, 32);
-
-        var mesh2 = new THREE.Mesh(geometry2, material2);
+        var geometry2 = new THREE.BoxGeometry(500, 500, 500);
+        var mesh2 = new THREE.Mesh(geometry2, cubeMaterial);
 
 
         scene.add(mesh2);
