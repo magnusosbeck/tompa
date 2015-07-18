@@ -1,228 +1,180 @@
-
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <title>three.js webgl - materials - cube reflection [cars]</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
     <style>
         body {
-            background:#000;
-            color:#fff;
-            padding:0;
-            margin:0;
-            overflow:hidden;
-            font-family:georgia;
-            text-align:center;
+            margin: 0px;
+            overflow: hidden;
         }
-        a { color:skyblue; text-decoration:none }
-        #info {
+
+        #example {
             position: absolute;
-            width: 100%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
     </style>
-</head>
+    <title></title>
 
-<body>
+    <link href="lib/ionic/css/ionic.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+    <!-- IF using Sass (run gulp sass first), then uncomment below and remove the CSS includes above
+    <link href="css/ionic.app.css" rel="stylesheet">
+    -->
+
+    <!-- ionic/angularjs js -->
+    <script src="lib/ionic/js/ionic.bundle.js"></script>
+
+    <!-- cordova script (this will be a 404 during development) -->
+    <script src="cordova.js"></script>
+
+    <!-- your app's js -->
+    <script src="js/app.js"></script>
+</head>
+<body ng-app="starter">
 
 <script src="lib/threejs/three.js"></script>
+<script src="lib/threejs/StereoEffect.js"></script>
+<script src="lib/threejs/DeviceOrientationControls.js"></script>
 <script src="lib/threejs/OrbitControls.js"></script>
-
-<div id="info">
-    <a href="http://threejs.org" target="_blank">three.js</a> - webgl environment mapping example<br/>
-    Equirectangular Map by <a href="http://gl.ict.usc.edu/Data/HighResProbes/">University of Southern California</a><br/>
-    Spherical Map by <a href="http://www.pauldebevec.com/Probes/">Paul Debevec</a>
-</div>
-
+<div id="example"></div>
 <script>
+    var camera, scene, renderer;
+    var effect, controls;
+    var element, container;
 
-    var controls, camera, scene, renderer;
-    var cameraCube, sceneCube;
-    var textureEquirec, textureCube, textureSphere;
-    var cubeMesh, sphereMesh;
-    var sphereMaterial;
-    var refract;
+    var clock = new THREE.Clock();
 
     init();
     animate();
 
     function init() {
+        renderer = new THREE.WebGLRenderer();
+        element = renderer.domElement;
+        container = document.getElementById('example');
+        container.appendChild(element);
 
-        // CAMERAS
-
-        camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 100000 );
-        camera.position.set( 0, 0, 1000 );
-        cameraCube = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 100000 );
-
-        controls = new THREE.OrbitControls( camera );
-        controls.minDistance = 500;
-        controls.maxDistance = 2500;
-
-        // SCENE
+        effect = new THREE.StereoEffect(renderer);
 
         scene = new THREE.Scene();
-        sceneCube = new THREE.Scene();
 
-        // Lights
+        camera = new THREE.PerspectiveCamera(90, 1, 0.001, 700);
+        camera.position.set(0, 10, 0);
+        scene.add(camera);
 
-        var ambient = new THREE.AmbientLight( 0xffffff );
-        scene.add( ambient );
+        controls = new THREE.OrbitControls(camera, element);
+        controls.rotateUp(Math.PI / 4);
+        controls.target.set(
+          camera.position.x + 0.1,
+          camera.position.y,
+          camera.position.z
+        );
+        controls.noZoom = true;
+        controls.noPan = true;
 
-        // Textures
-
-        var r = "img/";
-        var urls = [ r + "posx.jpg", r + "negx.jpg",
-            r + "posy.jpg", r + "negy.jpg",
-            r + "posz.jpg", r + "negz.jpg" ];
-
-        textureCube = THREE.ImageUtils.loadTextureCube( urls );
-        textureCube.format = THREE.RGBFormat;
-        textureCube.mapping = THREE.CubeReflectionMapping;
-
-        textureEquirec = THREE.ImageUtils.loadTexture( "textures/2294472375_24a3b8ef46_o.jpg" );
-        textureEquirec.format = THREE.RGBAFormat;
-        textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
-        textureEquirec.magFilter = THREE.LinearFilter;
-        textureEquirec.minFilter = THREE.LinearMipMapLinearFilter;
-
-        textureSphere = THREE.ImageUtils.loadTexture( "textures/metal.jpg" );
-        textureSphere.mapping = THREE.SphericalReflectionMapping;
-
-        // Materials
-
-        var equirectShader = THREE.ShaderLib[ "equirect" ];
-
-        var equirectMaterial = new THREE.ShaderMaterial( {
-            fragmentShader: equirectShader.fragmentShader,
-            vertexShader: equirectShader.vertexShader,
-            uniforms: equirectShader.uniforms,
-            depthWrite: false,
-            side: THREE.BackSide
-        } );
-
-        equirectMaterial.uniforms[ "tEquirect" ].value = textureEquirec;
-
-        var cubeShader = THREE.ShaderLib[ "cube" ];
-        var cubeMaterial = new THREE.ShaderMaterial( {
-            fragmentShader: cubeShader.fragmentShader,
-            vertexShader: cubeShader.vertexShader,
-            uniforms: cubeShader.uniforms,
-            depthWrite: false,
-            side: THREE.BackSide
-        } );
-
-        cubeMaterial.uniforms[ "tCube" ].value = textureCube;
-
-        // Skybox
-
-        cubeMesh = new THREE.Mesh( new THREE.BoxGeometry( 100, 100, 100 ), cubeMaterial );
-        sceneCube.add( cubeMesh );
-
-        //
-
-        var geometry = new THREE.SphereGeometry( 400.0, 24, 24 );
-        sphereMaterial = new THREE.MeshLambertMaterial( { envMap: textureCube } );
-        sphereMesh = new THREE.Mesh( geometry, sphereMaterial );
-
-        scene.add( sphereMesh );
-
-        //
-
-        renderer = new THREE.WebGLRenderer();
-        renderer.autoClear = false;
-        renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
-        renderer.setFaceCulling( THREE.CullFaceNone );
-        document.body.appendChild( renderer.domElement );
-
-        //
-
-        var params = {
-            Cube: function () {
-                cubeMesh.material = cubeMaterial;
-                cubeMesh.visible = true;
-                sphereMaterial.envMap = textureCube;
-                sphereMaterial.needsUpdate = true;
-            },
-            Equirectangular: function () {
-                cubeMesh.material = equirectMaterial;
-                cubeMesh.visible = true;
-                sphereMaterial.envMap = textureEquirec;
-                sphereMaterial.needsUpdate = true;
-            },
-            Spherical: function () {
-                cubeMesh.visible = false;
-                sphereMaterial.envMap = textureSphere;
-                sphereMaterial.needsUpdate = true;
-            },
-            Refraction: false
-        };
-
-        var gui = new dat.GUI();
-        gui.add( params, 'Cube' );
-        gui.add( params, 'Equirectangular' );
-        gui.add( params, 'Spherical' );
-        gui.add( params, 'Refraction' ).onChange( function( value ) {
-
-            if ( value ) {
-
-                textureEquirec.mapping = THREE.EquirectangularRefractionMapping;
-                textureCube.mapping = THREE.CubeRefractionMapping;
-
-            } else {
-
-                textureEquirec.mapping = THREE.EquirectangularReflectionMapping;
-                textureCube.mapping = THREE.CubeReflectionMapping;
-
+        function setOrientationControls(e) {
+            if (!e.alpha) {
+                return;
             }
 
-            sphereMaterial.needsUpdate = true;
+            controls = new THREE.DeviceOrientationControls(camera, true);
+            controls.connect();
+            controls.update();
 
-        } );
-        gui.open();
+            element.addEventListener('click', fullscreen, false);
 
-        window.addEventListener( 'resize', onWindowResize, false );
+            window.removeEventListener('deviceorientation', setOrientationControls, true);
+        }
 
+        window.addEventListener('deviceorientation', setOrientationControls, true);
+
+
+        var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
+        scene.add(light);
+
+//        var texture = THREE.ImageUtils.loadTexture(
+//          'img/checker.png'
+//        );
+
+//        var sphere = new THREE.Mesh(
+//          new THREE.SphereGeometry(100, 32, 32),
+//          new THREE.MeshBasicMaterial({
+//              map: THREE.ImageUtils.loadTexture('img/checker.png')
+//          })
+//        );
+
+        var material = new THREE.MeshBasicMaterial({
+            map: THREE.ImageUtils.loadTexture('img/banan.jpg')
+        });
+
+        var material2 = new THREE.MeshBasicMaterial({
+            map: THREE.ImageUtils.loadTexture('img/lekolar.jpg')
+        });
+
+//        material.wrapS = THREE.RepeatWrapping;
+//        material.wrapT = THREE.RepeatWrapping;
+//        material.repeat = new THREE.Vector2(50, 50);
+//        material.anisotropy = renderer.getMaxAnisotropy();
+
+
+        material.side = THREE.BackSide;
+        material2.side = THREE.BackSide;
+        var geometry2 = new THREE.SphereGeometry(500, 32, 32);
+
+        var mesh2 = new THREE.Mesh(geometry2, material2);
+
+
+        scene.add(mesh2);
+
+        window.addEventListener('resize', resize, false);
+        setTimeout(resize, 1);
     }
 
-    function onWindowResize() {
+    function resize() {
+        var width = container.offsetWidth;
+        var height = container.offsetHeight;
 
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = width / height;
         camera.updateProjectionMatrix();
 
-        cameraCube.aspect = window.innerWidth / window.innerHeight;
-        cameraCube.updateProjectionMatrix();
-
-        renderer.setSize( window.innerWidth, window.innerHeight );
-
+        renderer.setSize(width, height);
+        effect.setSize(width, height);
     }
 
-    //
+    function update(dt) {
+        resize();
 
-    function animate() {
+        camera.updateProjectionMatrix();
 
-        requestAnimationFrame( animate );
-
-        render();
-
-        controls.update();
-
+        controls.update(dt);
     }
 
-    function render() {
-
-        var timer = -0.0002 * Date.now();
-
-        camera.lookAt( scene.position );
-        cameraCube.rotation.copy( camera.rotation );
-
-        renderer.render( sceneCube, cameraCube );
-        renderer.render( scene, camera );
-
+    function render(dt) {
+        effect.render(scene, camera);
     }
 
+    function animate(t) {
+        requestAnimationFrame(animate);
+
+        update(clock.getDelta());
+        render(clock.getDelta());
+    }
+
+    function fullscreen() {
+        if (container.requestFullscreen) {
+            container.requestFullscreen();
+        } else if (container.msRequestFullscreen) {
+            container.msRequestFullscreen();
+        } else if (container.mozRequestFullScreen) {
+            container.mozRequestFullScreen();
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+        }
+    }
 </script>
-
 </body>
 </html>
