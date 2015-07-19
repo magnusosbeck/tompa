@@ -41,6 +41,7 @@
 <script src="lib/threejs/StereoEffect.js"></script>
 <script src="lib/threejs/DeviceOrientationControls.js"></script>
 <script src="lib/threejs/OrbitControls.js"></script>
+
 <div id="example"></div>
 <script>
     var camera, scene, renderer;
@@ -62,7 +63,7 @@
 
         scene = new THREE.Scene();
 
-        camera = new THREE.PerspectiveCamera(90, 1, 0.001, 700);
+        camera = new THREE.PerspectiveCamera(90, 1, 0.001, 10000);
         camera.position.set(0, 10, 0);
         scene.add(camera);
 
@@ -93,30 +94,15 @@
         window.addEventListener('deviceorientation', setOrientationControls, true);
 
 
-        var light = new THREE.HemisphereLight(0x777777, 0x000000, 0.6);
+        var light = new THREE.HemisphereLight(0x777777, 0x000000, 1.6);
         scene.add(light);
 
 
         var r = "img/";
-        var urls = [
-            r + "checker.png",
-            r + "checker.png",
-            r + "checker.png",
-            r + "wood.jpg",
-            r + "checker.png",
-            r + "checker.png"
-        ];
-        /*
-         r + "banan.jpg",
-         r + "checker.png",
-         r + "gGxwr.jpg",
-         r + "hall.jpg",
-         r + "lekolar.jpg",
-         r + "wood.jpg"
-         */
-
+        var urls = [r + "posx.jpg", r + "negx.jpg",
+            r + "posy.jpg", r + "negy.jpg",
+            r + "posz.jpg", r + "negz.jpg"];
         var textureCube = THREE.ImageUtils.loadTextureCube(urls);
-
         var cubeShader = THREE.ShaderLib["cube"];
         var cubeMaterial = new THREE.ShaderMaterial({
             fragmentShader: cubeShader.fragmentShader,
@@ -128,8 +114,37 @@
 
         cubeMaterial.uniforms["tCube"].value = textureCube;
 
-        var geometry2 = new THREE.BoxGeometry(500, 500, 500);
+        var geometry2 = new THREE.BoxGeometry(1050, 1050, 1050);
         var mesh2 = new THREE.Mesh(geometry2, cubeMaterial);
+
+
+
+
+//        var sphereMaterial = new THREE.MeshLambertMaterial( { envMap: textureCube } );
+//        sphereMaterial.side = THREE.FrontSide;
+
+        var shader = THREE.ShaderLib[ "cube" ];
+        shader.uniforms[ "tCube" ].value = textureCube;
+
+        var material = new THREE.ShaderMaterial( {
+
+              fragmentShader: shader.fragmentShader,
+              vertexShader: shader.vertexShader,
+              uniforms: shader.uniforms,
+              side: THREE.BackSide
+
+          } );
+
+        var geometry = new THREE.SphereGeometry( Math.floor((Math.random() * 20) + 5), 20, 20 );
+
+        for (var i = 0; i < 200; i++){
+            var sphereMesh = new THREE.Mesh( geometry, material );
+            sphereMesh.position.x = Math.floor((Math.random() * 500) - 200);
+            sphereMesh.position.y = Math.floor((Math.random() * 500) - 200);
+            sphereMesh.position.z = Math.floor((Math.random() * 500) - 200);
+            scene.add( sphereMesh );
+        }
+
 
 
         scene.add(mesh2);
